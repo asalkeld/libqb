@@ -1209,8 +1209,14 @@ qb_log_ctl2(int32_t t, enum qb_log_conf c, qb_log_ctl2_arg_t arg_not4directuse)
 			if (arg_i32 <= 0) {
 				return -EINVAL;
 			}
-			conf[t].size = arg_i32;
+			if (arg_i32 == conf[t].size) {
+				conf[t].filename[0] = '\0';
+				rc = 1;
+			} else {
+				conf[t].size = arg_i32;
+			}
 			need_reload = QB_TRUE;
+			break;
 		} else {
 			return -ENOSYS;
 		}
@@ -1236,7 +1242,7 @@ qb_log_ctl2(int32_t t, enum qb_log_conf c, qb_log_ctl2_arg_t arg_not4directuse)
 	default:
 		rc = -EINVAL;
 	}
-	if (rc == 0 && need_reload && conf[t].reload) {
+	if (rc >= 0 && need_reload && conf[t].reload) {
 		in_logger = QB_TRUE;
 		conf[t].reload(t);
 		in_logger = QB_FALSE;
