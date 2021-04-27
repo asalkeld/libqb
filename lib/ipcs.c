@@ -75,6 +75,20 @@ qb_ipcs_create(const char *name,
 	return s;
 }
 
+qb_ipcs_service_t *
+qb_ipcs_alias_create(qb_ipcs_service_t *service,
+		     const char *name,
+		     enum qb_ipc_type type)
+{
+	struct qb_ipcs_service *s;
+
+	s = qb_ipcs_create(name, service->service_id, type, &service->serv_fns);
+
+	s->alias_for = service;
+
+	return s;
+}
+
 void
 qb_ipcs_poll_handlers_set(struct qb_ipcs_service *s,
 			  struct qb_ipcs_poll_handlers *handlers)
@@ -102,6 +116,15 @@ int32_t
 qb_ipcs_run(struct qb_ipcs_service *s)
 {
 	int32_t res = 0;
+
+	if (s->alias_for) {
+		memcpy(&s->poll_fns, &s->alias_for->poll_fns, sizeof(s->poll_fns));
+
+		/* Clear this now so we don't use it by accident later when the
+		 * original connection might have gone away
+		 */
+		s->alias_for = NULL;
+	}
 
 	if (s->poll_fns.dispatch_add == NULL ||
 	    s->poll_fns.dispatch_mod == NULL ||
